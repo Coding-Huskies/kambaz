@@ -2,14 +2,17 @@ import Link from "next/link";
 export default function Labs() {
   return (
     <div id="wd-labs">
-      <strong>Name: </strong> Kushal Krishnappa
+      <strong>Team: </strong> Kushal Krishnappa, Anirudh N Bakare, Sai Karthikeyan Sura
+      <br />
+      <strong>Project: </strong> Kambaz Quizzes
       <br />
       <strong>Course: </strong> CS5610 - Web Development
       <br />
-      <strong>Section: </strong> 05
+      <strong>Frontend Source Code: </strong>
+      <a href="https://github.com/Coding-Huskies/kambaz">Kambaz Next.js App</a>
       <br />
-      <strong>Source Code: </strong>
-      <a href="https://github.com/kushalkrishnappa/kambaz">GitHub Repository</a>
+      <strong>Backend Source Code: </strong>
+      <a href="https://github.com/Coding-Huskies/kambaz-node-server-app">Kambaz Node Server App</a>
       <br />
       <h1>Labs</h1>
       <ul>
