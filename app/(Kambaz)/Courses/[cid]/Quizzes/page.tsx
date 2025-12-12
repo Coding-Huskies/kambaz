@@ -4,10 +4,26 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useDispatch, useSelector } from "react-redux";
 import Link from "next/link";
-import { Container, ListGroup, Badge, Modal, Button, FormSelect, FormLabel } from "react-bootstrap";
-import { BsGripVertical } from "react-icons/bs";
+import {
+  Container,
+  ListGroup,
+  Badge,
+  Modal,
+  Button,
+  FormSelect,
+  FormLabel,
+  Row,
+  Col,
+} from "react-bootstrap";
+import { BsGripVertical, BsSortDown, BsSortUp } from "react-icons/bs";
 import { MdQuiz } from "react-icons/md";
-import { setQuizzes, deleteQuiz as deleteQuizAction, publishQuiz as publishQuizAction, unpublishQuiz as unpublishQuizAction, addQuiz } from "./reducer";
+import {
+  setQuizzes,
+  deleteQuiz as deleteQuizAction,
+  publishQuiz as publishQuizAction,
+  unpublishQuiz as unpublishQuizAction,
+  addQuiz,
+} from "./reducer";
 import * as client from "../../client";
 import QuizControls from "./QuizControls";
 import QuizControlButtons from "./QuizControlButtons";
@@ -24,11 +40,15 @@ const formatDateToMonthDayYear = (dateString: string) => {
 
 const getAvailabilityStatus = (quiz: any) => {
   const now = new Date();
-  const availableDate = quiz.availableDate ? new Date(quiz.availableDate) : null;
+  const availableDate = quiz.availableDate
+    ? new Date(quiz.availableDate)
+    : null;
   const untilDate = quiz.untilDate ? new Date(quiz.untilDate) : null;
 
   if (availableDate && now < availableDate) {
-    return `Not available until ${formatDateToMonthDayYear(quiz.availableDate)}`;
+    return `Not available until ${formatDateToMonthDayYear(
+      quiz.availableDate
+    )}`;
   }
   if (untilDate && now > untilDate) {
     return "Closed";
@@ -48,6 +68,8 @@ export default function Quizzes() {
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [showErrorModal, setShowErrorModal] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string>("");
+  const [sortBy, setSortBy] = useState("title");
+  const [sortOrder, setSortOrder] = useState("asc");
 
   const { quizzes } = useSelector(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -118,7 +140,10 @@ export default function Quizzes() {
       };
 
       // Create the new quiz in the target course
-      const newQuiz = await client.createQuizForCourse(targetCourseId, quizCopy);
+      const newQuiz = await client.createQuizForCourse(
+        targetCourseId,
+        quizCopy
+      );
 
       // Now add each question individually
       if (originalQuiz.questions && originalQuiz.questions.length > 0) {
@@ -155,6 +180,27 @@ export default function Quizzes() {
     ? quizzes.filter((quiz: any) => quiz.published && quiz.course === cid)
     : quizzes.filter((quiz: any) => quiz.course === cid);
 
+  const sortedQuizzes = [...displayedQuizzes].sort((a, b) => {
+    const aValue = a[sortBy];
+    const bValue = b[sortBy];
+
+    if (sortBy === "title") {
+      return sortOrder === "asc"
+        ? aValue.localeCompare(bValue)
+        : bValue.localeCompare(aValue);
+    }
+
+    if (sortBy === "dueDate" || sortBy === "availableDate") {
+      const aDate = aValue ? new Date(aValue).getTime() : 0;
+      const bDate = bValue ? new Date(bValue).getTime() : 0;
+      if (!aValue) return 1;
+      if (!bValue) return -1;
+      return sortOrder === "asc" ? aDate - bDate : bDate - aDate;
+    }
+
+    return 0;
+  });
+
   return (
     <Container id="wd-quizzes">
       <QuizControls />
@@ -164,73 +210,106 @@ export default function Quizzes() {
           {isFaculty && <p>Click the + Quiz button to create a new quiz</p>}
         </div>
       ) : (
-        <ListGroup className="rounded-0">
-          <ListGroup.Item className="p-0 mb-5 fs-5 border-gray">
-            <div className="wd-title p-3 ps-2 bg-secondary">
-              <BsGripVertical className="me-2 fs-3" /> QUIZZES
-            </div>
-            <ListGroup className="wd-quiz-list rounded-0">
-              {displayedQuizzes.map((quiz: any) => {
-                const totalPoints = quiz.questions?.reduce(
-                  (sum: number, q: any) => sum + (q.points || 0),
-                  0
-                ) || 0;
-                const questionCount = quiz.questions?.length || 0;
+        <>
+          <ListGroup className="rounded-0">
+            <ListGroup.Item className="p-0 mb-5 fs-5 border-gray">
+              <div className="wd-title p-3 ps-2 bg-secondary">
+                <BsGripVertical className="me-2 fs-3" /> QUIZZES
+                <span className="d-flex float-end align-items-center gap-2">
+                  <div>
+                    <FormLabel>Sort by:</FormLabel>
+                  </div>
+                  <div style={{marginTop: '-8px'}}>
+                    <FormSelect
+                      value={sortBy}
+                      onChange={(e) => setSortBy(e.target.value)}
+                    >
+                      <option value="title">Title</option>
+                      <option value="dueDate">Due Date</option>
+                      <option value="availableDate">Available Date</option>
+                    </FormSelect>
+                  </div>
+                  <div style={{marginTop: '-8px'}}>
+                    <Button
+                      variant="outline-secondary"
+                      onClick={() =>
+                        setSortOrder(sortOrder === "asc" ? "desc" : "asc")
+                      }
+                    >
+                      {sortOrder === "asc" ? <BsSortUp /> : <BsSortDown />}
+                    </Button>
+                  </div>
+                </span>
+              </div>
+              <ListGroup className="wd-quiz-list rounded-0">
+                {sortedQuizzes.map((quiz: any) => {
+                  const totalPoints =
+                    quiz.questions?.reduce(
+                      (sum: number, q: any) => sum + (q.points || 0),
+                      0
+                    ) || 0;
+                  const questionCount = quiz.questions?.length || 0;
 
-                return (
-                  <ListGroup.Item key={quiz._id} className="wd-quiz-item p-3 ps-1">
-                    <div className="d-flex align-items-center">
-                      <BsGripVertical className="me-2 fs-3" />
-                      <MdQuiz className="me-2 fs-3 text-success" />
-                      <div className="flex-grow-1 p-1">
-                        <Link
-                          href={
-                            isFaculty
-                              ? `/Courses/${cid}/Quizzes/${quiz._id}`
-                              : `/Courses/${cid}/Quizzes/${quiz._id}/take`
-                          }
-                          className="text-decoration-none text-dark fw-bold fs-5"
-                        >
-                          {quiz.title}
-                        </Link>
-                        <div className="mt-1">
-                          <span className="text-muted me-2">
-                            {getAvailabilityStatus(quiz)}
-                          </span>
-                          {quiz.dueDate && (
-                            <>
-                              | <strong>Due</strong> {formatDateToMonthDayYear(quiz.dueDate)}
-                            </>
-                          )}
-                          {" | "}
-                          {totalPoints} pts | {questionCount} {questionCount === 1 ? "Question" : "Questions"}
+                  return (
+                    <ListGroup.Item
+                      key={quiz._id}
+                      className="wd-quiz-item p-3 ps-1"
+                    >
+                      <div className="d-flex align-items-center">
+                        <BsGripVertical className="me-2 fs-3" />
+                        <MdQuiz className="me-2 fs-3 text-success" />
+                        <div className="flex-grow-1 p-1">
+                          <Link
+                            href={
+                              isFaculty
+                                ? `/Courses/${cid}/Quizzes/${quiz._id}`
+                                : `/Courses/${cid}/Quizzes/${quiz._id}/take`
+                            }
+                            className="text-decoration-none text-dark fw-bold fs-5"
+                          >
+                            {quiz.title}
+                          </Link>
+                          <div className="mt-1">
+                            <span className="text-muted me-2">
+                              {getAvailabilityStatus(quiz)}
+                            </span>
+                            {quiz.dueDate && (
+                              <>
+                                | <strong>Due</strong>{" "}
+                                {formatDateToMonthDayYear(quiz.dueDate)}
+                              </>
+                            )}
+                            {" | "}
+                            {totalPoints} pts | {questionCount}{" "}
+                            {questionCount === 1 ? "Question" : "Questions"}
+                          </div>
                         </div>
+                        {isFaculty && (
+                          <QuizControlButtons
+                            quizId={quiz._id}
+                            published={quiz.published}
+                            onEdit={handleEditQuiz}
+                            onDelete={(id) => {
+                              setQuizToDelete(id);
+                              setShowDeleteModal(true);
+                            }}
+                            onCopy={(id) => {
+                              setQuizToCopy(id);
+                              setTargetCourseId(cid as string);
+                              setShowCopyModal(true);
+                            }}
+                            onPublish={handlePublishQuiz}
+                            onUnpublish={handleUnpublishQuiz}
+                          />
+                        )}
                       </div>
-                      {isFaculty && (
-                        <QuizControlButtons
-                          quizId={quiz._id}
-                          published={quiz.published}
-                          onEdit={handleEditQuiz}
-                          onDelete={(id) => {
-                            setQuizToDelete(id);
-                            setShowDeleteModal(true);
-                          }}
-                          onCopy={(id) => {
-                            setQuizToCopy(id);
-                            setTargetCourseId(cid as string);
-                            setShowCopyModal(true);
-                          }}
-                          onPublish={handlePublishQuiz}
-                          onUnpublish={handleUnpublishQuiz}
-                        />
-                      )}
-                    </div>
-                  </ListGroup.Item>
-                );
-              })}
-            </ListGroup>
-          </ListGroup.Item>
-        </ListGroup>
+                    </ListGroup.Item>
+                  );
+                })}
+              </ListGroup>
+            </ListGroup.Item>
+          </ListGroup>
+        </>
       )}
 
       {/* Delete Confirmation Modal */}
@@ -239,7 +318,8 @@ export default function Quizzes() {
           <Modal.Title>Delete Quiz</Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          Are you sure you want to delete this quiz? This action cannot be undone.
+          Are you sure you want to delete this quiz? This action cannot be
+          undone.
         </Modal.Body>
         <Modal.Footer>
           <Button variant="secondary" onClick={() => setShowDeleteModal(false)}>
@@ -272,7 +352,8 @@ export default function Quizzes() {
             ))}
           </FormSelect>
           <p className="text-muted small">
-            The quiz will be copied to the selected course with all its questions and settings.
+            The quiz will be copied to the selected course with all its
+            questions and settings.
           </p>
         </Modal.Body>
         <Modal.Footer>
@@ -290,9 +371,7 @@ export default function Quizzes() {
         <Modal.Header closeButton>
           <Modal.Title>Success</Modal.Title>
         </Modal.Header>
-        <Modal.Body>
-          Quiz copied successfully!
-        </Modal.Body>
+        <Modal.Body>Quiz copied successfully!</Modal.Body>
         <Modal.Footer>
           <Button variant="primary" onClick={() => setShowSuccessModal(false)}>
             OK
@@ -305,9 +384,7 @@ export default function Quizzes() {
         <Modal.Header closeButton>
           <Modal.Title>Error</Modal.Title>
         </Modal.Header>
-        <Modal.Body>
-          {errorMessage}
-        </Modal.Body>
+        <Modal.Body>{errorMessage}</Modal.Body>
         <Modal.Footer>
           <Button variant="primary" onClick={() => setShowErrorModal(false)}>
             OK
