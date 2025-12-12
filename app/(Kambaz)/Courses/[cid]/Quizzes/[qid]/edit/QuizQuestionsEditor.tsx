@@ -21,12 +21,13 @@ export default function QuizQuestionsEditor({
   onCancel: () => void;
 }) {
   const { qid } = useParams();
-  const [editingQuestionId, setEditingQuestionId] = useState<string | null>(null);
+  const [editingQuestionId, setEditingQuestionId] = useState<string | null>(
+    null
+  );
 
-  const totalPoints = quiz.questions?.reduce(
-    (sum: number, q: any) => sum + (q.points || 0),
-    0
-  ) || 0;
+  const totalPoints =
+    quiz.questions?.reduce((sum: number, q: any) => sum + (q.points || 0), 0) ||
+    0;
 
   const handleAddQuestion = () => {
     const newQuestion = {
@@ -51,8 +52,12 @@ export default function QuizQuestionsEditor({
     try {
       if (qid !== "new") {
         if (question._id.startsWith("temp-")) {
-          // New question
-          const savedQuestion = await client.addQuestion(qid as string, question);
+          // New question - remove temp ID before saving
+          const { _id, ...questionWithoutId } = question;
+          const savedQuestion = await client.addQuestion(
+            qid as string,
+            questionWithoutId
+          );
           const updatedQuestions = quiz.questions.map((q: any) =>
             q._id === question._id ? savedQuestion : q
           );
@@ -75,6 +80,7 @@ export default function QuizQuestionsEditor({
       setEditingQuestionId(null);
     } catch (error) {
       console.error("Error saving question:", error);
+      alert("Error saving question. Please try again.");
     }
   };
 
@@ -100,10 +106,6 @@ export default function QuizQuestionsEditor({
     <div>
       <div className="d-flex justify-content-between align-items-center mb-3">
         <h5>Points: {totalPoints}</h5>
-        <Button variant="primary" onClick={handleAddQuestion}>
-          <FaPlus className="me-2" />
-          New Question
-        </Button>
       </div>
 
       {quiz.questions && quiz.questions.length > 0 ? (
@@ -124,7 +126,8 @@ export default function QuizQuestionsEditor({
                         Question {index + 1}: {question.title}
                       </h6>
                       <p className="mb-1">
-                        <strong>Type:</strong> {question.type.replace(/_/g, " ")}
+                        <strong>Type:</strong>{" "}
+                        {question.type.replace(/_/g, " ")}
                       </p>
                       <p className="mb-1">
                         <strong>Points:</strong> {question.points}
@@ -160,17 +163,20 @@ export default function QuizQuestionsEditor({
         </div>
       )}
 
+      <div className="d-flex justify-content-center align-items-center mb-3 mt-3">
+        <Button variant="primary" onClick={handleAddQuestion}>
+          <FaPlus className="me-2" />
+          New Question
+        </Button>
+      </div>
+
       <hr />
 
       <div className="text-end">
         <Button variant="secondary" className="me-2" onClick={onCancel}>
           Cancel
         </Button>
-        <Button
-          variant="primary"
-          className="me-2"
-          onClick={() => onSave(quiz)}
-        >
+        <Button variant="primary" className="me-2" onClick={() => onSave(quiz)}>
           Save
         </Button>
         <Button variant="success" onClick={() => onSaveAndPublish(quiz)}>

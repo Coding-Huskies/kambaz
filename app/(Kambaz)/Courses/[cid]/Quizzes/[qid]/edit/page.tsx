@@ -19,6 +19,14 @@ export default function QuizEditor() {
       if (qid && qid !== "new") {
         try {
           const quizData = await client.findQuizById(qid as string);
+          // Handle existing quizzes that don't have timeLimitEnabled field
+          if (quizData.timeLimitEnabled === undefined) {
+            quizData.timeLimitEnabled = quizData.timeLimit !== undefined && quizData.timeLimit !== null && quizData.timeLimit > 0;
+          }
+          // Handle existing quizzes that don't have showCorrectAnswersOption field
+          if (quizData.showCorrectAnswersOption === undefined) {
+            quizData.showCorrectAnswersOption = quizData.showCorrectAnswers === "Immediately" ? "Immediately" : "CustomDate";
+          }
           setQuiz(quizData);
         } catch (error) {
           console.error("Error fetching quiz:", error);
@@ -34,9 +42,11 @@ export default function QuizEditor() {
           points: 0,
           assignmentGroup: "QUIZZES",
           shuffleAnswers: true,
+          timeLimitEnabled: false,
           timeLimit: 20,
           multipleAttempts: false,
           howManyAttempts: 1,
+          showCorrectAnswersOption: "Immediately",
           showCorrectAnswers: "Immediately",
           accessCode: "",
           oneQuestionAtATime: true,
@@ -64,12 +74,28 @@ export default function QuizEditor() {
         }
         return newQuiz;
       } else {
+        // Save any unsaved questions first (those with temp IDs)
+        if (quizData.questions && quizData.questions.length > 0) {
+          for (const question of quizData.questions) {
+            if (question._id.startsWith("temp-")) {
+              // This is a new question that hasn't been saved yet
+              const { _id, ...questionWithoutId } = question;
+              await client.addQuestion(qid as string, questionWithoutId);
+            }
+          }
+        }
+
+        // Update the quiz metadata
         await client.updateQuiz({ ...quizData, _id: qid });
-        setQuiz(quizData);
+
+        // Fetch the latest quiz data to get updated questions with real IDs
+        const updatedQuiz = await client.findQuizById(qid as string);
+        setQuiz(updatedQuiz);
+
         if (navigate) {
           router.push(`/Courses/${cid}/Quizzes`);
         }
-        return quizData;
+        return updatedQuiz;
       }
     } catch (error) {
       console.error("Error saving quiz:", error);

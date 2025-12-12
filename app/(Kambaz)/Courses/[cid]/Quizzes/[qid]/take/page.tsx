@@ -42,7 +42,19 @@ export default function TakeQuiz() {
         setAttemptCount(attempts.length);
 
         if (attempts.length > 0) {
-          setLatestAttempt(attempts[0]);
+          const latestAttemptData = attempts[0];
+          setLatestAttempt(latestAttemptData);
+
+          // If there's a completed attempt, show the results screen
+          if (latestAttemptData && latestAttemptData.answers) {
+            // Reconstruct the answers object from the attempt
+            const reconstructedAnswers: any = {};
+            latestAttemptData.answers.forEach((ans: any) => {
+              reconstructedAnswers[ans.questionId] = ans.answer;
+            });
+            setAnswers(reconstructedAnswers);
+            setShowResults(true);
+          }
         }
       }
     };
@@ -104,6 +116,100 @@ export default function TakeQuiz() {
     );
   }
 
+  const getTotalPoints = () => {
+    return quiz.questions?.reduce((sum: number, q: any) => sum + q.points, 0) || 0;
+  };
+
+  if (showResults) {
+    return (
+      <Container className="mt-4">
+        <Alert variant="success">
+          <h4>Quiz Submitted Successfully!</h4>
+          <p>
+            Your score: {latestAttempt.score} / {getTotalPoints()} points
+          </p>
+          <p>
+            Attempt {attemptCount} of {quiz.multipleAttempts ? quiz.howManyAttempts : 1}
+          </p>
+        </Alert>
+
+        {(quiz.showCorrectAnswersOption === "Immediately" || quiz.showCorrectAnswers === "Immediately") && (
+          <div className="mt-4">
+            <h5>Question Results:</h5>
+            {quiz.questions.map((question: any, index: number) => {
+              const userAnswer = answers[question._id];
+              let isCorrect = false;
+              let correctAnswer = "";
+
+              if (question.type === "MULTIPLE_CHOICE") {
+                const correctChoice = question.choices.find((c: any) => c.isCorrect);
+                correctAnswer = correctChoice?.text || "";
+                isCorrect = userAnswer === correctAnswer;
+              } else if (question.type === "TRUE_FALSE") {
+                correctAnswer = question.correctAnswer ? "True" : "False";
+                isCorrect = userAnswer === question.correctAnswer;
+              } else if (question.type === "FILL_IN_BLANK") {
+                correctAnswer = question.possibleAnswers.join(", ");
+                isCorrect = question.possibleAnswers.some(
+                  (ans: string) => ans.toLowerCase() === userAnswer?.toLowerCase()
+                );
+              }
+
+              return (
+                <Card
+                  key={question._id}
+                  className="mb-3"
+                  border={isCorrect ? "success" : "danger"}
+                >
+                  <Card.Body>
+                    <h6>
+                      Question {index + 1}: {question.title} ({question.points} pts)
+                    </h6>
+                    <p>{question.question}</p>
+                    <div className={isCorrect ? "text-success" : "text-danger"}>
+                      <strong>Your answer:</strong>{" "}
+                      {userAnswer?.toString() || "Not answered"}
+                    </div>
+                    {!isCorrect && (
+                      <div className="text-success">
+                        <strong>Correct answer:</strong> {correctAnswer}
+                      </div>
+                    )}
+                    <div className="mt-2">
+                      <strong>Points earned:</strong>{" "}
+                      {isCorrect ? question.points : 0} / {question.points}
+                    </div>
+                  </Card.Body>
+                </Card>
+              );
+            })}
+          </div>
+        )}
+
+        <div className="d-flex gap-2">
+          {canTakeQuiz() && (
+            <Button
+              variant="primary"
+              onClick={() => {
+                setShowResults(false);
+                setAnswers({});
+                setCurrentQuestionIndex(0);
+              }}
+            >
+              Take New Attempt
+            </Button>
+          )}
+          <Button
+            variant="secondary"
+            onClick={() => router.push(`/Courses/${cid}/Quizzes`)}
+          >
+            Back to Quizzes
+          </Button>
+        </div>
+      </Container>
+    );
+  }
+
   if (!canTakeQuiz()) {
     return (
       <Container className="mt-4">
@@ -112,7 +218,7 @@ export default function TakeQuiz() {
           {latestAttempt && (
             <div className="mt-2">
               <strong>Your Last Score:</strong> {latestAttempt.score} /{" "}
-              {quiz.questions?.reduce((sum: number, q: any) => sum + q.points, 0) || 0}{" "}
+              {getTotalPoints()}{" "}
               points
             </div>
           )}
@@ -184,6 +290,7 @@ export default function TakeQuiz() {
 
       await client.createAttempt(qid as string, attempt);
       setLatestAttempt({ ...attempt, score: totalScore });
+      setAttemptCount(attemptCount + 1);
       setShowResults(true);
     } catch (error) {
       console.error("Error submitting quiz:", error);
@@ -192,83 +299,6 @@ export default function TakeQuiz() {
       setSubmitting(false);
     }
   };
-
-  const getTotalPoints = () => {
-    return quiz.questions?.reduce((sum: number, q: any) => sum + q.points, 0) || 0;
-  };
-
-  if (showResults) {
-    return (
-      <Container className="mt-4">
-        <Alert variant="success">
-          <h4>Quiz Submitted Successfully!</h4>
-          <p>
-            Your score: {latestAttempt.score} / {getTotalPoints()} points
-          </p>
-          <p>
-            Attempt {attemptCount + 1} of {quiz.howManyAttempts}
-          </p>
-        </Alert>
-
-        {quiz.showCorrectAnswers === "Immediately" && (
-          <div className="mt-4">
-            <h5>Question Results:</h5>
-            {quiz.questions.map((question: any, index: number) => {
-              const userAnswer = answers[question._id];
-              let isCorrect = false;
-              let correctAnswer = "";
-
-              if (question.type === "MULTIPLE_CHOICE") {
-                const correctChoice = question.choices.find((c: any) => c.isCorrect);
-                correctAnswer = correctChoice?.text || "";
-                isCorrect = userAnswer === correctAnswer;
-              } else if (question.type === "TRUE_FALSE") {
-                correctAnswer = question.correctAnswer ? "True" : "False";
-                isCorrect = userAnswer === question.correctAnswer;
-              } else if (question.type === "FILL_IN_BLANK") {
-                correctAnswer = question.possibleAnswers.join(", ");
-                isCorrect = question.possibleAnswers.some(
-                  (ans: string) => ans.toLowerCase() === userAnswer?.toLowerCase()
-                );
-              }
-
-              return (
-                <Card
-                  key={question._id}
-                  className="mb-3"
-                  border={isCorrect ? "success" : "danger"}
-                >
-                  <Card.Body>
-                    <h6>
-                      Question {index + 1}: {question.title} ({question.points} pts)
-                    </h6>
-                    <p>{question.question}</p>
-                    <div className={isCorrect ? "text-success" : "text-danger"}>
-                      <strong>Your answer:</strong>{" "}
-                      {userAnswer?.toString() || "Not answered"}
-                    </div>
-                    {!isCorrect && (
-                      <div className="text-success">
-                        <strong>Correct answer:</strong> {correctAnswer}
-                      </div>
-                    )}
-                    <div className="mt-2">
-                      <strong>Points earned:</strong>{" "}
-                      {isCorrect ? question.points : 0} / {question.points}
-                    </div>
-                  </Card.Body>
-                </Card>
-              );
-            })}
-          </div>
-        )}
-
-        <Button onClick={() => router.push(`/Courses/${cid}/Quizzes`)}>
-          Back to Quizzes
-        </Button>
-      </Container>
-    );
-  }
 
   if (!currentQuestion) {
     return (

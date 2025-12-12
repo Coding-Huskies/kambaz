@@ -11,6 +11,7 @@ export default function QuizControlButtons({
   onDelete,
   onPublish,
   onUnpublish,
+  onCopy,
 }: {
   quizId: string;
   published: boolean;
@@ -18,6 +19,7 @@ export default function QuizControlButtons({
   onDelete: (quizId: string) => void;
   onPublish: (quizId: string) => void;
   onUnpublish: (quizId: string) => void;
+  onCopy: (quizId: string) => void;
 }) {
   return (
     <div className="d-flex align-items-center gap-2">
@@ -46,6 +48,7 @@ export default function QuizControlButtons({
         </Dropdown.Toggle>
         <Dropdown.Menu>
           <Dropdown.Item onClick={() => onEdit(quizId)}>Edit</Dropdown.Item>
+          <Dropdown.Item onClick={() => onCopy(quizId)}>Copy</Dropdown.Item>
           <Dropdown.Item onClick={() => onDelete(quizId)}>Delete</Dropdown.Item>
           <Dropdown.Item onClick={() => (published ? onUnpublish(quizId) : onPublish(quizId))}>
             {published ? "Unpublish" : "Publish"}

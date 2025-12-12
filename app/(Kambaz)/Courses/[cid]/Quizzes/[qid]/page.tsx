@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { Container, Button, Row, Col, Table } from "react-bootstrap";
+import { Container, Button, Row, Col } from "react-bootstrap";
 import * as client from "../../../client";
 
 const formatDateToMonthDayYear = (dateString: string) => {
@@ -62,79 +62,73 @@ export default function QuizDetails() {
         </div>
       </div>
 
-      <Table bordered>
-        <tbody>
-          <tr>
-            <td><strong>Quiz Type</strong></td>
-            <td>{quiz.quizType?.replace(/_/g, " ")}</td>
-          </tr>
-          <tr>
-            <td><strong>Points</strong></td>
-            <td>{totalPoints}</td>
-          </tr>
-          <tr>
-            <td><strong>Assignment Group</strong></td>
-            <td>{quiz.assignmentGroup}</td>
-          </tr>
-          <tr>
-            <td><strong>Shuffle Answers</strong></td>
-            <td>{quiz.shuffleAnswers ? "Yes" : "No"}</td>
-          </tr>
-          <tr>
-            <td><strong>Time Limit</strong></td>
-            <td>{quiz.timeLimit} Minutes</td>
-          </tr>
-          <tr>
-            <td><strong>Multiple Attempts</strong></td>
-            <td>{quiz.multipleAttempts ? "Yes" : "No"}</td>
-          </tr>
-          {quiz.multipleAttempts && (
-            <tr>
-              <td><strong>How Many Attempts</strong></td>
-              <td>{quiz.howManyAttempts}</td>
-            </tr>
-          )}
-          <tr>
-            <td><strong>Show Correct Answers</strong></td>
-            <td>{quiz.showCorrectAnswers}</td>
-          </tr>
-          <tr>
-            <td><strong>Access Code</strong></td>
-            <td>{quiz.accessCode || "None"}</td>
-          </tr>
-          <tr>
-            <td><strong>One Question at a Time</strong></td>
-            <td>{quiz.oneQuestionAtATime ? "Yes" : "No"}</td>
-          </tr>
-          <tr>
-            <td><strong>Webcam Required</strong></td>
-            <td>{quiz.webcamRequired ? "Yes" : "No"}</td>
-          </tr>
-          <tr>
-            <td><strong>Lock Questions After Answering</strong></td>
-            <td>{quiz.lockQuestionsAfterAnswering ? "Yes" : "No"}</td>
-          </tr>
-        </tbody>
-      </Table>
+      <div className="">
+        <Row className="border-bottom p-2">
+          <Col sm={4} className="text-end"><strong>Quiz Type</strong></Col>
+          <Col sm={8}>{quiz.quizType?.replace(/_/g, " ")}</Col>
+        </Row>
+        <Row className="border-bottom p-2">
+          <Col sm={4} className="text-end"><strong>Points</strong></Col>
+          <Col sm={8}>{totalPoints}</Col>
+        </Row>
+        <Row className="border-bottom p-2">
+          <Col sm={4} className="text-end"><strong>Assignment Group</strong></Col>
+          <Col sm={8}>{quiz.assignmentGroup}</Col>
+        </Row>
+        <Row className="border-bottom p-2">
+          <Col sm={4} className="text-end"><strong>Shuffle Answers</strong></Col>
+          <Col sm={8}>{quiz.shuffleAnswers ? "Yes" : "No"}</Col>
+        </Row>
+        <Row className="border-bottom p-2">
+          <Col sm={4} className="text-end"><strong>Time Limit</strong></Col>
+          <Col sm={8}>{quiz.timeLimit} Minutes</Col>
+        </Row>
+        <Row className="border-bottom p-2">
+          <Col sm={4} className="text-end"><strong>Multiple Attempts</strong></Col>
+          <Col sm={8}>{quiz.multipleAttempts ? "Yes" : "No"}</Col>
+        </Row>
+        {quiz.multipleAttempts && (
+          <Row className="border-bottom p-2">
+            <Col sm={4} className="text-end"><strong>How Many Attempts</strong></Col>
+            <Col sm={8}>{quiz.howManyAttempts}</Col>
+          </Row>
+        )}
+        <Row className="border-bottom p-2">
+          <Col sm={4} className="text-end"><strong>Show Correct Answers</strong></Col>
+          <Col sm={8}>{quiz.showCorrectAnswers}</Col>
+        </Row>
+        <Row className="border-bottom p-2">
+          <Col sm={4} className="text-end"><strong>Access Code</strong></Col>
+          <Col sm={8}>{quiz.accessCode || "None"}</Col>
+        </Row>
+        <Row className="border-bottom p-2">
+          <Col sm={4} className="text-end"><strong>One Question at a Time</strong></Col>
+          <Col sm={8}>{quiz.oneQuestionAtATime ? "Yes" : "No"}</Col>
+        </Row>
+        <Row className="border-bottom p-2">
+          <Col sm={4} className="text-end"><strong>Webcam Required</strong></Col>
+          <Col sm={8}>{quiz.webcamRequired ? "Yes" : "No"}</Col>
+        </Row>
+        <Row className="p-2">
+          <Col sm={4} className="text-end"><strong>Lock Questions After Answering</strong></Col>
+          <Col sm={8}>{quiz.lockQuestionsAfterAnswering ? "Yes" : "No"}</Col>
+        </Row>
+      </div>
 
-      <Table bordered>
-        <thead>
-          <tr>
-            <th>Due</th>
-            <th>For</th>
-            <th>Available from</th>
-            <th>Until</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td>{formatDateToMonthDayYear(quiz.dueDate)}</td>
-            <td>Everyone</td>
-            <td>{formatDateToMonthDayYear(quiz.availableDate)}</td>
-            <td>{formatDateToMonthDayYear(quiz.untilDate)}</td>
-          </tr>
-        </tbody>
-      </Table>
+      <div className="mt-3">
+        <Row className="border-bottom border-dark p-2">
+          <Col sm={3}><strong>Due</strong></Col>
+          <Col sm={3}><strong>For</strong></Col>
+          <Col sm={3}><strong>Available from</strong></Col>
+          <Col sm={3}><strong>Until</strong></Col>
+        </Row>
+        <Row className="p-2">
+          <Col sm={3}>{formatDateToMonthDayYear(quiz.dueDate)}</Col>
+          <Col sm={3}>Everyone</Col>
+          <Col sm={3}>{formatDateToMonthDayYear(quiz.availableDate)}</Col>
+          <Col sm={3}>{formatDateToMonthDayYear(quiz.untilDate)}</Col>
+        </Row>
+      </div>
 
       <div className="mt-3">
         <h4>Questions ({quiz.questions?.length || 0})</h4>
