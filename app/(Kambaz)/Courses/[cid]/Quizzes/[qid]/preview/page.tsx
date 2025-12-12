@@ -13,13 +13,39 @@ export default function QuizPreview() {
   const [answers, setAnswers] = useState<any>({});
   const [showResults, setShowResults] = useState(false);
   const [score, setScore] = useState(0);
+  const [shuffledChoices, setShuffledChoices] = useState<any>({});
+
+  // Fisher-Yates shuffle algorithm
+  const shuffleArray = <T,>(array: T[]): T[] => {
+    const shuffled = [...array];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    return shuffled;
+  };
 
   useEffect(() => {
     const fetchQuiz = async () => {
       const quizData = await client.findQuizById(qid as string);
       setQuiz(quizData);
+
+      // Shuffle choices for each question if shuffleAnswers is enabled
+      if (quizData.shuffleAnswers && quizData.questions) {
+        const shuffled: any = {};
+        quizData.questions.forEach((question: any) => {
+          if (question.type === "MULTIPLE_CHOICE" && question.choices) {
+            shuffled[question._id] = shuffleArray(question.choices);
+          } else if (question.type === "TRUE_FALSE") {
+            // Shuffle True/False options
+            shuffled[question._id] = shuffleArray([true, false]);
+          }
+        });
+        setShuffledChoices(shuffled);
+      }
     };
     fetchQuiz();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [qid]);
 
   if (!quiz) {
@@ -168,7 +194,7 @@ export default function QuizPreview() {
 
           {currentQuestion.type === "MULTIPLE_CHOICE" && (
             <div>
-              {currentQuestion.choices.map((choice: any, index: number) => (
+              {(shuffledChoices[currentQuestion._id] || currentQuestion.choices).map((choice: any, index: number) => (
                 <FormCheck
                   key={index}
                   type="radio"
@@ -186,21 +212,17 @@ export default function QuizPreview() {
 
           {currentQuestion.type === "TRUE_FALSE" && (
             <div>
-              <FormCheck
-                type="radio"
-                label="True"
-                name={`question-${currentQuestion._id}`}
-                checked={answers[currentQuestion._id] === true}
-                onChange={() => handleAnswerChange(currentQuestion._id, true)}
-                className="mb-2"
-              />
-              <FormCheck
-                type="radio"
-                label="False"
-                name={`question-${currentQuestion._id}`}
-                checked={answers[currentQuestion._id] === false}
-                onChange={() => handleAnswerChange(currentQuestion._id, false)}
-              />
+              {(shuffledChoices[currentQuestion._id] || [true, false]).map((value: boolean, index: number) => (
+                <FormCheck
+                  key={index}
+                  type="radio"
+                  label={value ? "True" : "False"}
+                  name={`question-${currentQuestion._id}`}
+                  checked={answers[currentQuestion._id] === value}
+                  onChange={() => handleAnswerChange(currentQuestion._id, value)}
+                  className="mb-2"
+                />
+              ))}
             </div>
           )}
 
