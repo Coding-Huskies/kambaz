@@ -22,8 +22,6 @@ export default function TakeQuiz() {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [answers, setAnswers] = useState<any>({});
   const [attemptCount, setAttemptCount] = useState(0);
-  const [latestAttempt, setLatestAttempt] = useState<any>(null);
-  const [showResults, setShowResults] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
   const { currentUser } = useSelector(
@@ -42,22 +40,8 @@ export default function TakeQuiz() {
           currentUser._id
         );
         setAttemptCount(attempts.length);
-
-        if (attempts.length > 0) {
-          const latestAttemptData = attempts[0];
-          setLatestAttempt(latestAttemptData);
-
-          // If there's a completed attempt, show the results screen
-          if (latestAttemptData && latestAttemptData.answers) {
-            // Reconstruct the answers object from the attempt
-            const reconstructedAnswers: any = {};
-            latestAttemptData.answers.forEach((ans: any) => {
-              reconstructedAnswers[ans.questionId] = ans.answer;
-            });
-            setAnswers(reconstructedAnswers);
-            setShowResults(true);
-          }
-        }
+        // Don't show previous results - always start fresh
+        // Previous attempt results are shown on the /start page
       }
     };
     fetchQuizAndAttempts();
@@ -100,27 +84,9 @@ export default function TakeQuiz() {
   }
 
   if (untilDate && now > untilDate) {
-    return (
-      <Container className="mt-4">
-        <Alert variant="danger">This quiz is no longer available.</Alert>
-        {latestAttempt && (
-          <div>
-            <h5>Your Last Attempt:</h5>
-            <p>
-              Score: {latestAttempt.score} /{" "}
-              {quiz.questions?.reduce(
-                (sum: number, q: any) => sum + q.points,
-                0
-              ) || 0}{" "}
-              points
-            </p>
-          </div>
-        )}
-        <Button onClick={() => router.push(`/Courses/${cid}/Quizzes`)}>
-          Back to Quizzes
-        </Button>
-      </Container>
-    );
+    // Redirect to start page if quiz is closed
+    router.push(`/Courses/${cid}/Quizzes/${qid}/start`);
+    return <Container className="mt-4">Redirecting...</Container>;
   }
 
   const getTotalPoints = () => {
@@ -129,119 +95,10 @@ export default function TakeQuiz() {
     );
   };
 
-  if (showResults) {
-    return (
-      <Container className="mt-4">
-        <Alert variant="success">
-          <h4>Quiz Submitted Successfully!</h4>
-          <p>
-            Your score: {latestAttempt.score} / {getTotalPoints()} points
-          </p>
-          <p>
-            Attempt {attemptCount} of{" "}
-            {quiz.multipleAttempts ? quiz.howManyAttempts : 1}
-          </p>
-        </Alert>
-
-        {(quiz.showCorrectAnswersOption === "Immediately" ||
-          quiz.showCorrectAnswers === "Immediately") && (
-          <div className="mt-4">
-            <h5>Question Results:</h5>
-            {quiz.questions.map((question: any, index: number) => {
-              const userAnswer = answers[question._id];
-              let isCorrect = false;
-              let correctAnswer = "";
-
-              if (question.type === "MULTIPLE_CHOICE") {
-                const correctChoice = question.choices.find(
-                  (c: any) => c.isCorrect
-                );
-                correctAnswer = correctChoice?.text || "";
-                isCorrect = userAnswer === correctAnswer;
-              } else if (question.type === "TRUE_FALSE") {
-                correctAnswer = question.correctAnswer ? "True" : "False";
-                isCorrect = userAnswer === question.correctAnswer;
-              } else if (question.type === "FILL_IN_BLANK") {
-                correctAnswer = question.possibleAnswers.join(", ");
-                isCorrect = question.possibleAnswers.some(
-                  (ans: string) =>
-                    ans.toLowerCase() === userAnswer?.toLowerCase()
-                );
-              }
-
-              return (
-                <Card
-                  key={question._id}
-                  className="mb-3"
-                  border={isCorrect ? "success" : "danger"}
-                >
-                  <Card.Body>
-                    <h6>
-                      Question {index + 1}: {question.title} ({question.points}{" "}
-                      pts)
-                    </h6>
-                    <p>{question.question}</p>
-                    <div className={isCorrect ? "text-success" : "text-danger"}>
-                      <strong>Your answer:</strong>{" "}
-                      {userAnswer?.toString() || "Not answered"}
-                    </div>
-                    {!isCorrect && (
-                      <div className="text-success">
-                        <strong>Correct answer:</strong> {correctAnswer}
-                      </div>
-                    )}
-                    <div className="mt-2">
-                      <strong>Points earned:</strong>{" "}
-                      {isCorrect ? question.points : 0} / {question.points}
-                    </div>
-                  </Card.Body>
-                </Card>
-              );
-            })}
-          </div>
-        )}
-
-        <div className="d-flex gap-2">
-          {canTakeQuiz() && (
-            <Button
-              variant="primary"
-              onClick={() => {
-                setShowResults(false);
-                setAnswers({});
-                setCurrentQuestionIndex(0);
-              }}
-            >
-              Take New Attempt
-            </Button>
-          )}
-          <Button
-            variant="secondary"
-            onClick={() => router.push(`/Courses/${cid}/Quizzes`)}
-          >
-            Back to Quizzes
-          </Button>
-        </div>
-      </Container>
-    );
-  }
-
   if (!canTakeQuiz()) {
-    return (
-      <Container className="mt-4">
-        <Alert variant="info">
-          You have used all your attempts for this quiz.
-          {latestAttempt && (
-            <div className="mt-2">
-              <strong>Your Last Score:</strong> {latestAttempt.score} /{" "}
-              {getTotalPoints()} points
-            </div>
-          )}
-        </Alert>
-        <Button onClick={() => router.push(`/Courses/${cid}/Quizzes`)}>
-          Back to Quizzes
-        </Button>
-      </Container>
-    );
+    // Redirect to start page if no attempts available
+    router.push(`/Courses/${cid}/Quizzes/${qid}/start`);
+    return <Container className="mt-4">Redirecting...</Container>;
   }
 
   const currentQuestion = quiz.questions?.[currentQuestionIndex];
@@ -304,13 +161,11 @@ export default function TakeQuiz() {
       };
 
       await client.createAttempt(qid as string, attempt);
-      setLatestAttempt({ ...attempt, score: totalScore });
-      setAttemptCount(attemptCount + 1);
-      setShowResults(true);
+      // Redirect to start page to show results
+      router.push(`/Courses/${cid}/Quizzes/${qid}/start`);
     } catch (error) {
       console.error("Error submitting quiz:", error);
       alert("Error submitting quiz. Please try again.");
-    } finally {
       setSubmitting(false);
     }
   };
