@@ -10,12 +10,22 @@ export default function QuestionEditor({
   question,
   onSave,
   onCancel,
+  onChange,
 }: {
   question: any;
   onSave: (question: any) => void;
   onCancel: () => void;
+  onChange?: (question: any) => void;
 }) {
   const [questionState, setQuestionState] = useState(question);
+
+  // Update local state and notify parent of changes
+  const updateQuestionState = (updatedQuestion: any) => {
+    setQuestionState(updatedQuestion);
+    if (onChange) {
+      onChange(updatedQuestion);
+    }
+  };
 
   const handleTypeChange = (newType: string) => {
     let updatedQuestion = { ...questionState, type: newType };
@@ -47,7 +57,7 @@ export default function QuestionEditor({
       };
     }
 
-    setQuestionState(updatedQuestion);
+    updateQuestionState(updatedQuestion);
   };
 
   const handleSave = () => {
@@ -75,7 +85,7 @@ export default function QuestionEditor({
             type="text"
             value={questionState.title}
             onChange={(e) =>
-              setQuestionState({ ...questionState, title: e.target.value })
+              updateQuestionState({ ...questionState, title: e.target.value })
             }
           />
         </div>
@@ -86,7 +96,7 @@ export default function QuestionEditor({
             type="number"
             value={questionState.points}
             onChange={(e) =>
-              setQuestionState({
+              updateQuestionState({
                 ...questionState,
                 points: Number(e.target.value),
               })
@@ -101,7 +111,7 @@ export default function QuestionEditor({
             rows={3}
             value={questionState.question}
             onChange={(e) =>
-              setQuestionState({ ...questionState, question: e.target.value })
+              updateQuestionState({ ...questionState, question: e.target.value })
             }
           />
         </div>
@@ -109,21 +119,21 @@ export default function QuestionEditor({
         {questionState.type === "MULTIPLE_CHOICE" && (
           <MultipleChoiceEditor
             question={questionState}
-            setQuestion={setQuestionState}
+            setQuestion={updateQuestionState}
           />
         )}
 
         {questionState.type === "TRUE_FALSE" && (
           <TrueFalseEditor
             question={questionState}
-            setQuestion={setQuestionState}
+            setQuestion={updateQuestionState}
           />
         )}
 
         {questionState.type === "FILL_IN_BLANK" && (
           <FillInBlankEditor
             question={questionState}
-            setQuestion={setQuestionState}
+            setQuestion={updateQuestionState}
           />
         )}
 

@@ -102,6 +102,14 @@ export default function QuizQuestionsEditor({
     setEditingQuestionId(null);
   };
 
+  const handleQuestionChange = (updatedQuestion: any) => {
+    // Update the question in the quiz state as user edits it
+    const updatedQuestions = quiz.questions.map((q: any) =>
+      q._id === updatedQuestion._id ? updatedQuestion : q
+    );
+    setQuiz({ ...quiz, questions: updatedQuestions });
+  };
+
   return (
     <div>
       <div className="d-flex justify-content-between align-items-center mb-3">
@@ -117,6 +125,7 @@ export default function QuizQuestionsEditor({
                   question={question}
                   onSave={handleSaveQuestion}
                   onCancel={handleCancelEdit}
+                  onChange={handleQuestionChange}
                 />
               ) : (
                 <div>
