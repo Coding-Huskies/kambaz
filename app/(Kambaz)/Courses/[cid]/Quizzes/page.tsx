@@ -263,7 +263,7 @@ export default function Quizzes() {
                             href={
                               isFaculty
                                 ? `/Courses/${cid}/Quizzes/${quiz._id}`
-                                : `/Courses/${cid}/Quizzes/${quiz._id}/take`
+                                : `/Courses/${cid}/Quizzes/${quiz._id}/start`
                             }
                             className="text-decoration-none text-dark fw-bold fs-5"
                           >
