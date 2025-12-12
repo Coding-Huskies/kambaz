@@ -89,14 +89,46 @@ export default function Quizzes() {
   const isFaculty = currentUser?.role === "FACULTY";
   const isStudent = currentUser?.role === "STUDENT";
 
+  // Store latest attempt scores for each quiz (for students)
+  const [quizScores, setQuizScores] = useState<{
+    [quizId: string]: { score: number; totalPoints: number } | null;
+  }>({});
+
   const fetchQuizzes = async () => {
-    const quizzes = await client.findQuizzesForCourse(cid as string);
-    dispatch(setQuizzes(quizzes));
+    const quizzesData = await client.findQuizzesForCourse(cid as string);
+    dispatch(setQuizzes(quizzesData));
+
+    // If student, fetch their latest attempt for each quiz
+    if (currentUser?.role === "STUDENT") {
+      const scores: { [quizId: string]: { score: number; totalPoints: number } | null } = {};
+      for (const quiz of quizzesData) {
+        if (quiz.published) {
+          try {
+            const attempts = await client.findAttemptsForQuiz(quiz._id, currentUser._id);
+            if (attempts && attempts.length > 0) {
+              const totalPoints = quiz.questions?.reduce(
+                (sum: number, q: any) => sum + (q.points || 0),
+                0
+              ) || 0;
+              scores[quiz._id] = {
+                score: attempts[0].score,
+                totalPoints,
+              };
+            } else {
+              scores[quiz._id] = null;
+            }
+          } catch (error) {
+            scores[quiz._id] = null;
+          }
+        }
+      }
+      setQuizScores(scores);
+    }
   };
 
   useEffect(() => {
     fetchQuizzes();
-  }, []);
+  }, [currentUser]);
 
   const handleDeleteQuiz = async () => {
     await client.deleteQuiz(quizToDelete);
@@ -271,7 +303,7 @@ export default function Quizzes() {
                           </Link>
                           <div className="mt-1">
                             <span className="text-muted me-2">
-                              {getAvailabilityStatus(quiz)}
+                              <strong>{getAvailabilityStatus(quiz)}</strong>
                             </span>
                             {quiz.dueDate && (
                               <>
@@ -282,6 +314,13 @@ export default function Quizzes() {
                             {" | "}
                             {totalPoints} pts | {questionCount}{" "}
                             {questionCount === 1 ? "Question" : "Questions"}
+                            {isStudent && quizScores[quiz._id] && (
+                              <>
+                                {" | "}
+                                <strong>Score:</strong>{" "}
+                                {quizScores[quiz._id]?.score} / {quizScores[quiz._id]?.totalPoints}
+                              </>
+                            )}
                           </div>
                         </div>
                         {isFaculty && (
