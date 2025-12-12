@@ -13,6 +13,8 @@ import {
 } from "react-bootstrap";
 import * as client from "../../../../client";
 
+import QuizTimer from "./QuizTimer";
+
 export default function TakeQuiz() {
   const { cid, qid } = useParams();
   const router = useRouter();
@@ -78,7 +80,9 @@ export default function TakeQuiz() {
 
   // Check availability
   const now = new Date();
-  const availableDate = quiz.availableDate ? new Date(quiz.availableDate) : null;
+  const availableDate = quiz.availableDate
+    ? new Date(quiz.availableDate)
+    : null;
   const untilDate = quiz.untilDate ? new Date(quiz.untilDate) : null;
 
   if (availableDate && now < availableDate) {
@@ -104,7 +108,10 @@ export default function TakeQuiz() {
             <h5>Your Last Attempt:</h5>
             <p>
               Score: {latestAttempt.score} /{" "}
-              {quiz.questions?.reduce((sum: number, q: any) => sum + q.points, 0) || 0}{" "}
+              {quiz.questions?.reduce(
+                (sum: number, q: any) => sum + q.points,
+                0
+              ) || 0}{" "}
               points
             </p>
           </div>
@@ -117,7 +124,9 @@ export default function TakeQuiz() {
   }
 
   const getTotalPoints = () => {
-    return quiz.questions?.reduce((sum: number, q: any) => sum + q.points, 0) || 0;
+    return (
+      quiz.questions?.reduce((sum: number, q: any) => sum + q.points, 0) || 0
+    );
   };
 
   if (showResults) {
@@ -129,11 +138,13 @@ export default function TakeQuiz() {
             Your score: {latestAttempt.score} / {getTotalPoints()} points
           </p>
           <p>
-            Attempt {attemptCount} of {quiz.multipleAttempts ? quiz.howManyAttempts : 1}
+            Attempt {attemptCount} of{" "}
+            {quiz.multipleAttempts ? quiz.howManyAttempts : 1}
           </p>
         </Alert>
 
-        {(quiz.showCorrectAnswersOption === "Immediately" || quiz.showCorrectAnswers === "Immediately") && (
+        {(quiz.showCorrectAnswersOption === "Immediately" ||
+          quiz.showCorrectAnswers === "Immediately") && (
           <div className="mt-4">
             <h5>Question Results:</h5>
             {quiz.questions.map((question: any, index: number) => {
@@ -142,7 +153,9 @@ export default function TakeQuiz() {
               let correctAnswer = "";
 
               if (question.type === "MULTIPLE_CHOICE") {
-                const correctChoice = question.choices.find((c: any) => c.isCorrect);
+                const correctChoice = question.choices.find(
+                  (c: any) => c.isCorrect
+                );
                 correctAnswer = correctChoice?.text || "";
                 isCorrect = userAnswer === correctAnswer;
               } else if (question.type === "TRUE_FALSE") {
@@ -151,7 +164,8 @@ export default function TakeQuiz() {
               } else if (question.type === "FILL_IN_BLANK") {
                 correctAnswer = question.possibleAnswers.join(", ");
                 isCorrect = question.possibleAnswers.some(
-                  (ans: string) => ans.toLowerCase() === userAnswer?.toLowerCase()
+                  (ans: string) =>
+                    ans.toLowerCase() === userAnswer?.toLowerCase()
                 );
               }
 
@@ -163,7 +177,8 @@ export default function TakeQuiz() {
                 >
                   <Card.Body>
                     <h6>
-                      Question {index + 1}: {question.title} ({question.points} pts)
+                      Question {index + 1}: {question.title} ({question.points}{" "}
+                      pts)
                     </h6>
                     <p>{question.question}</p>
                     <div className={isCorrect ? "text-success" : "text-danger"}>
@@ -218,8 +233,7 @@ export default function TakeQuiz() {
           {latestAttempt && (
             <div className="mt-2">
               <strong>Your Last Score:</strong> {latestAttempt.score} /{" "}
-              {getTotalPoints()}{" "}
-              points
+              {getTotalPoints()} points
             </div>
           )}
         </Alert>
@@ -250,6 +264,7 @@ export default function TakeQuiz() {
   };
 
   const handleSubmit = async () => {
+    if (submitting) return;
     setSubmitting(true);
 
     // Calculate score
@@ -314,7 +329,14 @@ export default function TakeQuiz() {
   return (
     <Container className="mt-4">
       <div className="d-flex justify-content-between align-items-center mb-3">
-        <h3>{quiz.title}</h3>
+        <div>
+          <div>
+          <h3>{quiz.title}</h3>
+          </div>
+          <div>
+          <QuizTimer timeLimit={quiz.timeLimit || 20} onTimeUp={handleSubmit} />
+          </div>
+        </div>
         <div className="text-end">
           <div className="text-muted">
             Question {currentQuestionIndex + 1} of {totalQuestions}
@@ -404,7 +426,11 @@ export default function TakeQuiz() {
         </Button>
         <div>
           {currentQuestionIndex < totalQuestions - 1 ? (
-            <Button variant="primary" onClick={handleNext} disabled={submitting}>
+            <Button
+              variant="primary"
+              onClick={handleNext}
+              disabled={submitting}
+            >
               Next
             </Button>
           ) : (
@@ -419,30 +445,32 @@ export default function TakeQuiz() {
         </div>
       </div>
 
-      {quiz.questions && quiz.questions.length > 1 && !quiz.oneQuestionAtATime && (
-        <div className="mt-4">
-          <h6>Questions:</h6>
-          <div className="d-flex flex-wrap gap-2">
-            {quiz.questions.map((q: any, index: number) => (
-              <Button
-                key={q._id}
-                variant={
-                  currentQuestionIndex === index
-                    ? "primary"
-                    : answers[q._id]
-                    ? "success"
-                    : "outline-secondary"
-                }
-                size="sm"
-                onClick={() => setCurrentQuestionIndex(index)}
-                disabled={submitting}
-              >
-                {index + 1}
-              </Button>
-            ))}
+      {quiz.questions &&
+        quiz.questions.length > 1 &&
+        !quiz.oneQuestionAtATime && (
+          <div className="mt-4">
+            <h6>Questions:</h6>
+            <div className="d-flex flex-wrap gap-2">
+              {quiz.questions.map((q: any, index: number) => (
+                <Button
+                  key={q._id}
+                  variant={
+                    currentQuestionIndex === index
+                      ? "primary"
+                      : answers[q._id]
+                      ? "success"
+                      : "outline-secondary"
+                  }
+                  size="sm"
+                  onClick={() => setCurrentQuestionIndex(index)}
+                  disabled={submitting}
+                >
+                  {index + 1}
+                </Button>
+              ))}
+            </div>
           </div>
-        </div>
-      )}
+        )}
     </Container>
   );
 }
