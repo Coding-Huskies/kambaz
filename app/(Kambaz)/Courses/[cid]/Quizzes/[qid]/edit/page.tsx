@@ -70,7 +70,7 @@ export default function QuizEditor() {
         const newQuiz = await client.createQuizForCourse(cid as string, quizData);
         setQuiz(newQuiz);
         if (navigate) {
-          router.push(`/Courses/${cid}/Quizzes/${newQuiz._id}/edit`);
+          router.push(`/Courses/${cid}/Quizzes/${newQuiz._id}`);
         }
         return newQuiz;
       } else {
@@ -93,7 +93,7 @@ export default function QuizEditor() {
         setQuiz(updatedQuiz);
 
         if (navigate) {
-          router.push(`/Courses/${cid}/Quizzes`);
+          router.push(`/Courses/${cid}/Quizzes/${qid}`);
         }
         return updatedQuiz;
       }
